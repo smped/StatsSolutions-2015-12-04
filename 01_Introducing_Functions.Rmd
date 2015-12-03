@@ -1,0 +1,282 @@
+---
+title: "Getting the Most Out of Functions"
+author: "Steve Pederson"
+date: "4 December 2015"
+output: ioslides_presentation
+---
+
+## Functions - An Introduction
+
+- Functions are the "engine"" of R
+
+- We use them to "do things", then we obtain some output
+
+- Some well known ones are `max()`, `min()`, `mean()`, `sd()`
+
+```{r, eval=FALSE}
+y <- c(1, 16, 2, 9)
+mean(y)
+min(y)
+sd(y)
+sqrt(y)
+```
+
+## Functions - An Introduction
+
+- Usually take some input, but some special functions don't
+
+```{r, eval=FALSE}
+browseVignettes()
+help.start()
+Sys.Date()
+```
+
+- To execute a function, we need to place round brackets `()` after the name  
+(Otherwise we see the code)
+
+**An R Package is essentially just a collection of functions!**
+
+
+## Why would we write functions?
+
+- Repetitive processes
+
+- Nothing may exist for our purpose
+
+- We can customise existing function
+    + We may need to tweak the output of a function
+    + We may only need part of a larger function
+    + We can customise for increased speed
+
+## Our first function
+
+```{r}
+myMean <- function(x){
+  n <- length(x)
+  total <- sum(x)
+  return(total / n)
+}
+```
+
+The functions needs:
+
+1. A `name` so we can 'call' it
+2. An `argument` (or input) to 'do something' to.  
+   Known in *R* world as the `formals`
+3. A `body` which is the code that runs when we call the function
+
+## Our first function
+
+```{r}
+myMean <- function(x){
+  n <- length(x)
+  total <- sum(x)
+  return(total / n)
+}
+```
+
+**NB**
+
+- `x` is just a place holder for "some R object"
+
+- This object then becomes called `x` as far as the function is concerned
+
+## Our first function
+
+Let's run it:
+
+```{r}
+y <- c(1, 16, 2, 9)
+myMean(y)
+```
+
+Check it against the real function
+
+```{r}
+mean(y)
+```
+
+**NB:** We didn't need to write `myMean(x = y)`
+
+## Our first function
+
+To learn about a function, we can see what arguments are required
+```{r}
+formals(myMean)
+```
+
+We can inspect the code
+```{r}
+body(myMean)
+```
+
+## Help pages
+
+We can read the help page (if one exists)
+```{r, eval=FALSE}
+?median
+?sd
+?mean
+```
+
+A well written help page is amazing
+
+(These can be rare for beginners in R)
+
+## Writing functions for NOT you
+
+(I mean you in 6 months, when you have no idea what you did)
+
+We can place comments in the code
+
+```{r}
+myMean <- function(x){
+  
+  # First, count how many values are in x
+  n <- length(x)
+  
+  # Now add them
+  total <- sum(x)
+  
+  # And produce some nice output
+  total / n
+  
+}
+```
+
+## Writing functions for NOT you
+
+Notice that these comments are not shown when we call `body()`
+
+```{r}
+body(myMean)
+```
+
+Comments are a great idea for new to intermediate *R* users!
+
+## What could possibly go wrong?
+
+Now we know how to write function that works:  
+**How could this ever go wrong?**
+
+## What could possibly go wrong?
+
+Some ways to break `myMean` are:
+
+1. Give it `NA` values
+2. Give it something which is not a `numeric` vector
+
+```{r, echo=FALSE, include=FALSE}
+ohNo <- c(NA, 1, 3, 5)
+```
+
+
+```{r,eval = FALSE}
+ohNo <- c(NA, 1, 3, 5)
+myMean(ohNo)
+```
+
+## Debugging!
+
+- We might need to debug the function.
+
+- R has an inbuilt function called `browser()`
+
+- If we (temporarily) place this command inside the function, we move
+    + **from the Global R Environment**  
+    + **to an R Environment INSIDE the function**
+
+## Debugging!
+
+```{r}
+myMean <- function(x){
+  
+  browser()
+  
+  # First, count how many values are in x
+  n <- length(x)
+  
+  # Now add them
+  total <- sum(x)
+  
+  # And produce some nice output
+  total / n
+  
+}
+```
+
+## Debugging!
+
+Now let's call the function, and a new window will open
+
+You'll also see some new buttons at the top of the R Console
+
+```{r, eval=FALSE}
+myMean(ohNo)
+```
+
+Turn to the `Environment` Tab at the top right of R Studio
+
+- This is displaying the internals of the function
+
+## Debugging!
+
+Send the first line in the `Source Viewer` Window to the Console
+
+- `n` will appear in the `Environment` Tab (and so will `x`)
+
+- The value looks right, so this is OK
+
+Now, send the second line to the Console
+
+- The value for `total` is not what we expected, so we need to fix this line!
+
+**Suggestions?**
+
+```{r, eval=FALSE}
+?sum
+```
+
+## Debugging!
+
+```{r}
+myMean <- function(x){
+  
+  browser()
+  
+  # Find the values which are not NA
+  notNA <- which(!is.na(x))
+  
+  # Find how many valid values there are
+  n <- length(x[notNA])
+  
+  # Now add the valid numbers
+  total <- sum(x[notNA])
+  
+  # And produce some nice output
+  total / n
+  
+}
+```
+
+## Debugging!
+
+My final function would look something like this:
+```{r}
+myMean <- function(x){
+  
+  # Check the vector is numeric
+  stopifnot(is.numeric(x))
+  
+  # Count the valid values
+  n <- sum(!is.na(x))
+  
+  # Add the valid values
+  total <- sum(x, na.rm = TRUE)
+  
+  # And now provide some output
+  total / n
+  
+}
+```
+
