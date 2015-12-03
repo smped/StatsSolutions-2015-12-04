@@ -1,0 +1,255 @@
+---
+title: "Session 2 - Customising Functions"
+author: "Steve Pederson"
+date: "4 December 2015"
+output: ioslides_presentation
+---
+
+## Digging Deeper
+
+R comes with numerous in-built datasets
+
+```{r}
+?ToothGrowth
+```
+
+Here, the length of growing teeth has been measured using:
+
+- 2 Vitamin C Supplements (Orange Juice or Ascorbic Acid)
+
+- 3 different dose levels (0.5, 1.0 & 2.0mg)
+
+## Tooth Growth
+
+First let's 
+
+1. make a shortcut to this dataset called `tg`
+
+2. change the dose levels to a categorical variable (i.e a `factor`)
+
+```{r}
+tg <- ToothGrowth
+tg$dose <- factor(tg$dose)
+levels(tg$dose) <- c("Low", "Med", "High")
+```
+
+## Data Inspection
+
+Firstly we should inspect and plot our data
+
+```{r}
+head(tg)
+```
+
+## Data Inspection
+```{r, fig.height=4}
+library(ggplot2)
+ggplot(tg, aes(x = dose, y = len, fill = supp)) +
+  geom_boxplot()
+```
+
+
+## Tooth Growth
+
+Our task is to conduct a `t.test()` for each dose level to see if there is any effect on tooth length.
+
+Let's try it for the low dosage level
+
+```{r}
+t.test(len ~ supp, data = tg, subset = dose == "Low")
+```
+
+
+## Tooth Growth
+
+- Doing this for all 3 levels will look messy! 
+
+- Let's change the structure of the output to make it look nicer
+
+- First, how does R really save the results from the `t.test()` function?
+
+```{r, eval=FALSE}
+results <- t.test(len ~ supp, data = tg, subset = dose == "Low")
+str(results)
+```
+
+## Tooth Growth
+
+This is an *R* object type called a `list`
+
+*What are we really interested in?*
+
+## Tooth Growth
+
+This is an *R* object type called a `list`
+
+*What are we really interested in?*
+
+1. The difference in means?
+
+2. The *T*-statistic
+
+3. The degrees of freedom
+
+4. The *p*-value
+
+**Where are these values in the function output?**
+
+## Tooth Growth
+
+We could write a function to output these as a `data.frame`
+
+```{r}
+myToothTest <- function(data){
+  
+  # Perform the t.test
+  res <- t.test(len~supp, data)
+  
+  # Output the data.frame
+  data.frame(Difference  = -diff(res$estimate),
+             T = res$statistic,
+             DF = res$parameter,
+             P = res$p.value, 
+             row.names= NULL)
+  
+}
+```
+
+## Tooth Growth
+
+- Now we can run the function
+
+- Note that we're going to do the sub-setting first
+
+```{r}
+subTg <- subset(tg, dose == "Low")
+myToothTest(subTg)
+```
+
+- This looks much nicer!
+
+## Tooth Growth
+
+- Let's incorporate the sub-setting into the function
+
+- AND add the dose level to the output
+
+## Tooth Growth
+
+```{r}
+myToothTest <- function(doseLevel, data){
+  
+  stopifnot(doseLevel %in% levels(data$dose))
+  data <- subset(data, dose == doseLevel)
+  
+  # Perform the t.test
+  res <- t.test(len~supp, data)
+  
+  # Output the data.frame
+  data.frame(Dose = doseLevel,
+             Difference  = -diff(res$estimate),
+             T = res$statistic,
+             DF = res$parameter,
+             P = res$p.value, 
+             row.names= NULL)
+  
+}
+```
+
+## Tooth Growth
+
+Now the function is even easier to run
+
+```{r}
+myToothTest("Low", tg)
+```
+
+## Now the FUN starts
+
+*R* has a function called `lapply()`
+
+This will apply a function to each element of a vector
+
+```{r, eval=FALSE}
+?lapply
+```
+
+```{r, echo=FALSE}
+y <- c(1,16, 2, 9)
+```
+
+Just to see this in action:
+```{r, eval=FALSE}
+y <- c(1, 16, 2, 9)
+lapply(y, FUN = sqrt)
+```
+
+**This places each element in the FIRST argument position of the function**
+
+## Now the FUN starts
+
+There is a alternate function `sapply()` that simplifies the output where possible
+
+```{r}
+sapply(y, FUN = sqrt)
+```
+
+It's very useful, but slightly unpredictable...
+
+## Now the FUN starts
+
+*Can we use this idea for our different dose levels?*
+
+## Now the FUN starts
+
+*Can we use this idea for our different dose levels?*
+
+YES!!!
+
+This is why I placed `doseLevels` as the first argument of our function
+
+```{r, echo=TRUE, results='hide'}
+doseLevels <- levels(tg$dose)
+lapply(doseLevels, myToothTest, data = tg)
+```
+
+Note that we specified `data = tg` after the function call
+
+## Getting amazing looking output
+
+The *R* package `dplyr` has a function `bind_rows()` for joining identical `data.frame` objects.
+
+First install and/or load the package
+```{r, eval=FALSE}
+install.packages(dplyr)
+library(dplyr)
+```
+
+## Getting amazing looking output
+
+```{r, echo=FALSE, message=FALSE}
+library(dplyr)
+```
+
+```{r, warning=FALSE}
+doseResults <- lapply(doseLevels, myToothTest, data = tg)
+doseResults <- bind_rows(doseResults)
+doseResults
+```
+
+## Getting amazing looking output
+
+- And for those using R Markdown/knitr
+
+```{r, warning=FALSE}
+library(knitr)
+kable(doseResults)
+```
+
+## In the real world
+
+This technique can be applied to numerous datasets
+
+- You might want to do linear regression on data from different climates/regions
+
+- You might have thousands of SNPs to run a `fisher.test()` on
