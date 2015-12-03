@@ -239,7 +239,7 @@ doseResults
 
 ## Getting amazing looking output
 
-- And for those using R Markdown/knitr
+And for those using R Markdown/knitr
 
 ```{r, warning=FALSE}
 library(knitr)
@@ -250,6 +250,6 @@ kable(doseResults)
 
 This technique can be applied to numerous datasets
 
-- You might want to do linear regression on data from different climates/regions
+- You might want to run the same linear regression model on data from different climates/regions
 
 - You might have thousands of SNPs to run a `fisher.test()` on

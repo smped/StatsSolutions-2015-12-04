@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Session 2 - Customising Functions</title>
+  <title>An Advanced Dataset</title>
 
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -25,7 +25,7 @@
     var SLIDE_CONFIG = {
       // Slide settings
       settings: {
-                title: 'Session 2 - Customising Functions',
+                title: 'An Advanced Dataset',
                         useBuilds: true,
         usePrettify: true,
         enableSlideAreas: true,
@@ -92,287 +92,300 @@
           </hgroup>
   </slide>
 
-<slide class=''><hgroup><h2>Digging Deeper</h2></hgroup><article  id="digging-deeper">
-
-<p>R comes with numerous in-built datasets</p>
-
-<pre class = 'prettyprint lang-r'>?ToothGrowth</pre>
-
-<p>Here, the length of growing teeth has been measured using:</p>
+<slide class=''><hgroup><h2>SNP Data</h2></hgroup><article  id="snp-data">
 
 <ul>
-<li><p>2 Vitamin C Supplements (Orange Juice or Ascorbic Acid)</p></li>
-<li><p>3 different dose levels (0.5, 1.0 &amp; 2.0mg)</p></li>
+<li><p>In the <code>data</code> folder you&#39;ll find some SNP genotypes as <code>snps.csv</code></p></li>
+<li>We&#39;ll write a function using the above to:
+
+<ul>
+<li>Collect each genotype into a contingency table</li>
+<li>Run a Fisher Test on each table</li>
+<li>Find any significant SNPs</li>
+</ul></li>
 </ul>
 
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth">
+</article></slide><slide class=''><hgroup><h2>SNP Data</h2></hgroup><article  id="snp-data-1">
 
-<p>First let&#39;s</p>
+<p>Load the file <code>snps.csv</code> as the <em>R</em> object <code>snps</code></p>
+
+<pre class = 'prettyprint lang-r'>library(readr)
+snpFile &lt;- file.path(&quot;data&quot;, &quot;snps.csv&quot;)
+file.exists(snpFile)
+snps &lt;- read_csv(snpFile)</pre>
+
+</article></slide><slide class=''><hgroup><h2>SNP Data</h2></hgroup><article  id="snp-data-2">
+
+<h3>What is a contingency table?</h3>
+
+<pre class = 'prettyprint lang-r'>table(snps[,1:2]) </pre>
+
+<pre >##           SNP1
+## Population AA AB BB
+##    Control 13 30 10
+##    Treat    8 19 21</pre>
+
+</article></slide><slide class=''><hgroup><h2>SNP Data</h2></hgroup><article  id="snp-data-3">
 
 <ol>
-<li><p>make a shortcut to this dataset called <code>tg</code></p></li>
-<li><p>change the dose levels to a categorical variable (i.e a <code>factor</code>)</p></li>
+<li>The Fisher Test -
+
+<ul>
+<li><em>Tests if the overall allele distribution varies across the populations</em></li>
+</ul></li>
 </ol>
 
-<pre class = 'prettyprint lang-r'>tg &lt;- ToothGrowth
-tg$dose &lt;- factor(tg$dose)
-levels(tg$dose) &lt;- c(&quot;Low&quot;, &quot;Med&quot;, &quot;High&quot;)</pre>
-
-</article></slide><slide class=''><hgroup><h2>Data Inspection</h2></hgroup><article  id="data-inspection">
-
-<p>Firstly we should inspect and plot our data</p>
-
-<pre class = 'prettyprint lang-r'>head(tg)</pre>
-
-<pre >##    len supp dose
-## 1  4.2   VC  Low
-## 2 11.5   VC  Low
-## 3  7.3   VC  Low
-## 4  5.8   VC  Low
-## 5  6.4   VC  Low
-## 6 10.0   VC  Low</pre>
-
-</article></slide><slide class=''><hgroup><h2>Data Inspection</h2></hgroup><article  id="data-inspection-1">
-
-<pre class = 'prettyprint lang-r'>library(ggplot2)
-ggplot(tg, aes(x = dose, y = len, fill = supp)) +
-  geom_boxplot()</pre>
-
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABaAAAAMACAIAAABdDldLAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAgAElEQVR4nOzdeZyVdaE/8O85szMDssywBqKIK1guKakkaalRapuUIprX8nZvv0xbb6aVXsu8r16ZpZUtdknNcKNEJZdMQHFJRQQEFUZBlgGGTWBgljPn98epucQyssycZ74z7/dfzzzne87zOXLmeM5nnu/3SWWz2QAAAAAQs3TSAQAAAAD2lYIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACIXmHSATqDTZs2NTY2Jp2CriWdTpeVlYUQmpqa6uvrk44DdDjl5eUhhGw2W1dXl3QWoMMpKytLp9MhhLq6umw2m3QcupxevXolHYHOScHRBhoaGrZu3Zp0CrqWoqKi/fbbL4SQyWS2bNmSdBygw8l9dmxqavIWAeyovLy8uLg4hLB27drm5uak49DlKDhoJ6aoAAAAANFTcAAAAADRU3AAAAAA0VNwAAAAANFTcAAAAADRcxWVNlBQUFBRUZF0CrqWgoKC3EZhYaGXH7Ar6XTaWwSwo5YPEuXl5S4TS541NjYmHYFOS8HRBrLZbFNTU9Ip6FpaPos0Nzf7nwSwK9ls1lsEsKOWDxKNjY0KDvIsk8kkHYFOS8HRBpqbm+vr65NOQdfScsl6Lz+gFdls1lsEsKOWDxINDQ0t2wCxswYHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAAED0FBwAAEJ9bb731rLPOOuuss1544YWkswAdgoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACInoIDAAAAiJ6CAwAAAIieggMAAACIXmHSAQAAIBqDBg3KbSxbtizZJABsR8EBAADvrKXa2PZHNQdAx2GKCgAAvIPt2o133A9A/ik4AACgNa23GDoOgA5CwQEAAABET8EBAAAARE/BAQAAAERPwQEAAABET8EBAAB7z5ViAToIBQcAALRGhQEQBQUHAAC8g111HLoPgI6jMOkAAAAQgVyXMWjQoKDXAOiQFBwAALC7VBsAHZYpKgAAAED0oj+Do7a29plnnqmpqamtrS0sLOzTp89BBx00atSooqKiXd0lm82GEFKpVB5jAgAAAO0o7oKjurr6zjvvbGxsbNmzadOmxYsXv/DCCxdddNF+++237eBsNjt79uwXXnihpqYmm81WVVUdddRRxx57bDrtNBYAAACIW8QFR1NT05QpUxobG/v37z969OghQ4aEEF577bVHH310/fr1999///nnn99ymkYmk7nnnnvmz5/fcvcVK1asWLFiwYIF5557biunewAAAAAdX8QFx8svv7xu3bry8vILL7ywrKwst/OYY44pKSm55557Fi1atGHDhp49e+b2P/PMM/Pnz0+lUqeccsrRRx+dTqdnzZr1yCOPVFdXz5gx45RTTknueQAAAAD7KuLZGTU1NSGEQw45pKXdyDn00ENzs05WrlyZ29PY2Dh9+vQQwujRo0ePHl1eXl5WVnbCCSecfPLJIYSZM2du2bIl3+kB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4H0/yqc+9alLL700nU6nUqmxY8d+4xvfyO1/5ZVX/va3v+37eFqn4AAAAKCTe9e73pXb2Lhx40EHHXTqqaf+6Ec/mjdv3r/927/dfvvtt99++49+9KN9P8pFF1207Y+f/exnW7bnzJmz7+NpnYIDAACATu7LX/5ySUlJbru5ufnxxx//+te/PmLEiCFDhnzhC1+YPXt2mxzl4IMP3vbHIUOGFBcX57YXLly47+NpnYIDAACATu7II498/vnnJ0yY0LLORc7SpUtvueWWo4466pZbbtn3o5SWlm77Yzqdbjncdlec3bvxtE7BAQAAQOc3YsSI3//+97W1tX/6058uuuiiqqqqlpuy2ezll19eW1u73V22u1zrOy78uXjx4m1/XL9+/YYNG3Lbw4cP3/fxtE7BQZfz7LPPXnXVVVddddVzzz2XdBYAAKDdNTY21v5TYWHh2Weffeutt65YseLxxx8/9thjc2O2bNny8ssvhxBy64/mrFu3rmU7m82+/vrrrR9oypQp2/54//33t2xvNxtl78bTOgUHXU5tbe3s2bNnz569Y0ELAAB0PitWrKj6pxtvvDG3s6Cg4AMf+MB//Md/tAzLXTJ2yJAhLXvuuuuu3EY2m/3pT3+6dOnS1g/085//fNasWbntZcuWXX311bntsrKyMWPG7Pt4WleYdAAAAABoR0OGDBkyZMiSJUtCCFddddWSJUve+9731tfXz549+w9/+ENuTFVV1aGHHhpCOOKII1ru+K1vfWv69On777//7Nmzn3766Xc80MaNG9///vd//OMf79at25/+9KeVK1fm9l966aUDBgzY9/G0TsEBAABAJ3fttddecMEFIYT6+vqbbrppxwG//e1v0+l0COF973vfySefPG3atNz+qVOn5jb222+/qqqq1i9ucvTRR7/44ou33XbbtjsPOOCAb3zjG20yntaZogIAAEAnN2HChPvvv//444/f8aZDDjnkrrvuOvPMM3M/plKp//3f/z3ppJO2HTNo0KCHHnpo//33b/0ot99+e8uiHjmjR49+4oknevfu3SbjaZ0zOAAAAOj8zjzzzDPPPHPu3Lmvv/76smXLNm/ePHjw4AMOOOC4444rKCjYduTQoUOnTZs2c+bMefPmbdiwYfjw4R/+8IdLS0sfe+yx1g8xYMCAZ5555rHHHnv55ZeLiopGjRp1/PHHb7tq6T6Op3UKDgAAALqKESNGjBgx4h2HpdPpk046abvzOHZHQUHB6aeffvrpp7fTeFphigoAAAAQPQUHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAA7KVrr702+089e/Zs8/HsPgUHAAAAED0FBwAAABA9BQcAAAAQPQUHAAAAED0FBwAAABA9BQcAAAAQvcKkAwAAAED7qqury2azCQYoKSkpLPQFvH357wsAAEAn19zcvC8FR0NDQ3FxcRvmoT10xSkq2Ww22eoOAACAWPzlL38ZO3bsZZdd1tzcnHQWWhP9GRwNDQ3PPffc/Pnz165d29TU1KdPn/79+7///e/v3bv3diOz2ezs2bNfeOGFmpqabDZbVVV11FFHHXvssel0V2x5AAAA2B3Tpk3LZDKzZ89es2ZNVVVV0nHYpbgLjvXr10+cOHHdunUte2pqampqaubMmTN27NhjjjmmZX8mk7nnnnvmz5/fsmfFihUrVqxYsGDBueeeW1RUlNfcAJ3a9QsWXb9gUdIpAADaRsuJG87g6OAiLjiy2eykSZPWrVtXXFz8wQ9+8PDDDy8sLFy2bNljjz22YsWKhx56aMCAAQMHDswNfuaZZ+bPn59KpU455ZSjjz46nU7PmjXrkUceqa6unjFjximnnJLscwHoBJTFHVBJSUnSEQAA8iTiguPNN99csWJFCOHcc8894IADcjuHDRs2ZMiQW265pba29m9/+9v48eNDCI2NjdOnTw8hjB49evTo0bmRJ5xwQn19/bRp02bOnPm+972vrKwsoecB0EmceOKJL7zwwtq1a5MOsk+2bt26dOnSEEKPHj369u2bdJy9V1RUlE6nL7jggqSDAADkScQFR3V1dQihf//+Le1GTlFR0ahRox544IFly5Zls9lUKrVw4cL6+voQwrHHHrvtyBNOOOHJJ59sampasGDBUUcdlc/wAJ1Pjx49rrzyyqRT7KvXXnvta1/7WgjhuOOOu/TSS5OOs/dy5zA2NTWtWrUq6SwAAPkQccGxYcOGEEL//v13vCm3wmhdXV1TU1NRUdHixYtDCAMGDOjRo8e2w0pKSvbff//q6urFixcrOAAAADq95ubm6urqPVpNY/PmzbmN6urq3PfQ3dS/f//tvoTSriIuOE488cSjjz56py+X3NSV/fbbLzchfPXq1eGff8vazsCBA6urq2tra3d1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ly9btmx3Hjk3zIUydip/BceTTz6Zt2MBAADArhSmUgPLStvv8XsU7cF37aOPPnr58uVPPfXU7gyeOXNmCGHEiBEhhJUrV65bt66oqCh32VDyd5lYAAAAYDunnnpqCGH69OmLFy9ufeSrr776zDPPhBDOOuusEMJ111132GGHnX766dsNy01j6YIUHAAAAJCYCRMmlJeXNzc3f/vb325lWDabveKKK7LZbGVlZe4iHkVFRSGEDRs2bDdy3bp1IYQePXq0W+QOKrGCo6am5uGHH7777rt/+9vf5v7r787lcwAAAKAz6dOnz1e/+tUQwh133HHDDTfsatgPf/jD++67L4Tw3e9+N3c10kMOOSSEUFtbu2rVqm1HvvTSSyGEww8/vF1jd0D5Ljiy2eydd9552GGHDRgw4Iwzzhg3btznPve5lStXhhBuu+22k08++ZZbbtm0aVOeUwEAAEBSrrrqqpNPPjmE8JWvfOWzn/3skiVLtr21urr6M5/5zBVXXBFCOPPMM7/whS/k9h933HEtd285Y2Dy5MkzZswIIYwZMyZf8TuK/C0yGkJoamoaN27c5MmTd3prNpudPn369OnTf/7zn99///37779/PrMBAABAIgoLCx944IFx48ZNnTp14sSJEydOPOqoow488MBsNrto0aLZs2fnhn3kIx+ZNGlSYeE/vsgfeeSRl1xyya9+9atf/epXs2bNGjVq1Guvvfboo4+GEEaMGPHFL34xseeTkLyewXH55Zfn2o10On366advN79o0KBBZWVlIYSXX375ve9973bn2AAAAEBnVVFR8cADD9x2220HH3xwCGHWrFn33nvvfffdl2s3Dj300N/97ndTpkzJfWtu8eMf//iyyy5Lp9N///vff/aznz388MPNzc0f+chHHnroodwKHV1K/s7gmDdv3k033RRCGDRo0B//+MeTTjophPD973+/ZcCHPvShJUuWfPGLX7zrrrtWr1793//93z/72c/yFg8AAIAuorG5efmWre33+G83Nu3FvdLp9Pnnnz9+/Pj58+c///zzNTU12Wy2X79+xx9//KGHHppKpXa8S3l5+Q033PDlL3/5xRdfXLhw4aBBg0aMGHHkkUfudHCnl7+C4+c//3lu4/e//32u3dhRZWXlnXfeuXHjxqlTp/7yl7/8zne+U1VVlbeEAAAAdAXLtmw9Z+aLSafYuVQqdfjhh+/REqFDhw4dOnRouyWKRv6mqMycOTOEMGbMmFNOOaWVYel0+pprrgkhNDU1zZ07N0/hAAAA6AK6deuWz8OVl5fn83BdXP7O4HjzzTdDCMcee+w7jnz3u99dUFCQyWReffXVD3zgA+2eDADokP7whz+89dZbIYRLL710uynHALB3/uu//uuvf/3rHt3l5ZdfXrt2bQhh1KhRpaWlu3/Hvn377mr6Au0hfwVHfX19CGF3Xg0FBQXpdDqTybz99tvtnwsA6KDmzJkzb968EMJ//ud/Jp0FgE7ipJNO2tPS4Zvf/OZzzz0XQrjsssv69evXPrloA/mbojJw4MAQwu7MOpkzZ05jY2MIoX///u0eCwAAAIhf/gqO3NIbU6dOfe2111ofef311+c2nMwDAAAA7I78FRwXX3xxCKG+vv78889fvnz5Tsc0Nzdfc801d955ZwjhhBNOOPDAA/MWDwAAAIhX/tbgOP744z//+c//+te//vvf/z5y5Mj/9//+X8sCoitXrqyrq3vxxRdvvvnml156KYRQWFj44x//OG/ZAAAAgKjlr+AIIdx8881r16699957165de8011+QuBxtCGDNmzLbDioqKfv/73x9//PH5zAYAAETknHPOGTt2bAihV69eSWehk+vRo0cIobCwMM+XmGVP5bXgKCoquvvuu3/7299+//vfz101dkdjxoy54YYb3vOe9+QzGAAAEJfu3bt379496RR0CZdcckn//v0PO+wwL7kOLq8FRwghlUp97nOfu+iii2bMmPHkk08uXLhw7dq1RUVFvXv3fve7333qqacedthheY4EAAAAu1JVVZVbU5IOLt8FR05BQcGYMWO2m5kCAAAA7aG8vDzZAKlUKtkAXUEyBQcAAADkjX6hK8jfZWIBAAAA2kl7ncFx0EEH7fuDLFy4cN8fBAAAgC6urq4u2QAlJSUFBQXJZuj02qvgWLRoUTs9MgAAAOyR5ubmbDabYIBkj95FtFfBccQRR7TTIwMAAEDeTJ8+/Yc//OGxxx579dVXW8ujI2uvgmPu3Lnt9MgAAACQNw8//PCWLVtmzJixZs2aysrKpOOwSxYZBQAAgF1qamrKbWQymWST0DoFBwAAABA9BQcAAAAQPQUHAAAAEL32WmQUAAAAOqC1a9fW19fv/viWwatWrWpubt79O/bt27egoGDPwrEPFBwAAAB0Fd///vcfe+yxvbvvpZdeukfje/XqdfPNNw8YMGDvDseeMkUFAACAruLxxx/P27HWrVs3a9asvB0OZ3AAAADQVWSz2RBCc3Hxpv2Htt9RitetK61dHVxZNr8UHAAAAHQtDb16v/7vX2y/x+87/YnB90/enZGrV68eMGBAJpP57ne/+73vfW9Xw1588cVjjjkmhHDnnXd+5jOf2famzZs3//a3v33wwQfnzZu3evXqysrKYcOGvec97/n6178+ePDgfXsekTFFBQAAAJJRVVV1+umnhxAmTZqUO7tkp+67774QQllZ2Uc/+tFt9z/66KPDhg378pe//MgjjyxbtqyhoWH58uUzZsz42c9+Nnz48O9973utPGbno+AAAACAxJx33nkhhAULFsyZM2dXY+69994QwplnnllRUdGyc+rUqWPHjl25cmWvXr2+/e1v/+1vf3v55ZenTJly7bXX9uvXr76+/uqrr77uuuvy8BQ6CFNUAKBzqqmpaWhoqK2tTTrI3mtoaMhtrFq1avPmzcmG2Ud9+vQpKipKOgUAHdHZZ5/drVu3urq6SZMmHXnkkTsOmD9//oIFC0IIn/70p1t2Ll++/IILLmhqajrmmGMefPDBfv365faPHDnyox/96GWXXfbpT3/6wQcfvPrqqy+88MJBgwbl57kkS8EBAJ3Qd77znYceeijpFG3m8ssvTzrCvurXr9+Pf/zj7t27Jx0EgA6noqLi7LPPvvPOOydNmnTttdemUqntBuTmp1RUVHz4wx9u2fmDH/ygtra2d+/eU6dOraqq2u4u5eXlEydOHDJkSF1d3X333felL32pvZ9FR2CKCgB0Qo888kjSEfgXK1eufO2115JOAUAHlZulsmjRohdffHHHW3PzUz72sY+VlZXl9qxfv/7WW28NIXz729/esd3I6dOnzxlnnBH+2Y90Bc7gAIBOqLm5OYSQKSl5+9DDks7S1ZWtWFG6amVwpUAAdu20007r3bv32rVrJ02alLtaSos33nhj1qxZ4V/npzzxxBNbtmwJIUyYMKGVh504ceLNN9+84ykhnZWCAwA6rcYe+1VPuCjpFF3doAfv779qZdIpAOjQiouLx40b98tf/vKuu+66/vrrt60kJk+eHELo2bPnaaed1rJz+vTpIYT+/fvv6vSNnIqKim0XJe30FBwAAAB0LUUb397/nknt9/hlNStyG7t/ldbzzjvvl7/85eLFi5999tlRo0a17M/NT/nEJz5RXFzcsnPp0qUhhAMOOKDNEncKCg4AAAC6ilzjUFBXV/nMzDwcrrq6ejdHnnjiiYMHD37rrbcmTZrUUnCsWLHi6aefDv86PyWEkLtK2pAhQ9o0bPQsMgoAAADtory8fDdHptPp3FKjd999d24trRDCn/70p2w2W1lZecopp2w7uKSkJIQQ+zXU25wzOAAAAOgqUqlUNptt7NX7zXHntt9Res6ZXTXzyRBC//79d/9e55133vXXX79s2bKnnnpq9OjR4Z/zUz71qU8VFv7Ll/fKysoQwqJFi9oydPwUHAAAAHQtmeLit4cf3H6PX7pi+V7ca+TIkUccccS8efMmTZo0evToNWvWPPHEE2GH+SkhhMMOOyyEUF1d3dzcnE7vcmbG008/fe6554YQJk+efNRRR+1FpLiYogIAAADJS6VS48ePDyHcc889mUxmypQpmUxmwIABubM5tvWBD3wghFBfX5+7nMqu/PnPf168ePHKlSsPP/zw9ovdcSg4AAAAoEP4zGc+E0JYuXLlE088kZufcs455xQUFGw37LjjjjvooINCCNddd10rF2p58MEHQwjve9/7cmt2dHoKDgAAAOgQDjjggBNOOCGE8Jvf/OaRRx4JO5ufEkIoKCj4r//6rxDCI488csMNN+z0oe666665c+eGEM4666x2TNyRKDgAAACgo8jNUvnjH//Y0NAwZMiQlkvGbueiiy4aO3ZsCOGrX/3ql7/85bVr17bc1NDQ8POf//zCCy8MIQwdOvTf//3f8xI8eRYZBYBOK5XJlKxdk3SKrq5g65akIwAQk3POOefSSy/NZDIhhHHjxu1qDdF0On377bd/5CMfefrpp3/605/+4he/GDVq1MCBA9evX//888+vWbMmhNCnT5/777+/rKwsr08gOQoOAOi0StauGfGDa5JOAQDsgaqqqtNOO23q1KlhF/NTWvTq1evxxx+/7rrrbrjhho0bN86YMaPlplQq9YlPfOLHP/7xkCFD2j1xh6HgAAAAoIvJZArq6trv4dONjfty94ceemg3R5aWll599dXf+ta3nnrqqQULFqxbt65bt26DBw8ePXp0//799yVDjBQcAAAAdC2ltavf851vJZ2izZSWlp566qmnnnpq0kES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M94tAMCxlMhkMrmuAQAGo4ULF95000179+49qH3YsGELFy688847V65cOXXq1HXr1vU8u23btiuvvHLZsmW9X7C4uPiee+657bbbDmrfu3fvFVdcUVtb2/uSRCLx53/+5/fee28ikejZ3tXVdccdd/znf/5nn5Xffvvt9957b35+/u+6RQCA/iPgAIAcWLx48ZVXXplOp0MI1dXVV1555ejRo7ds2bJo0aLm5uaysrLi4uLGxsaDAo6mpqZZs2bV19eHEMrKyubOnTtnzpyGhobXX389O7Di/vvv/7M/+7PsJel0+uqrr37mmWdCCBUVFfPnz580adL+/fvffvvt3/zmN1Gfhx566MYbb8xekslkrr322oULF4YQCgsLL7vsshkzZnR0dCxdunTJkiVRn2uuuWbhwoUHxSIAADkk4ACA/rZnz56ampodO3aEEC6++OLHHnts2LBh0ant27dfccUV7733XvTjQQHH17/+9YceeiiEcNZZZz355JMjR46M2jOZzI9//ONbb701k8kMGTJkzZo1EyZMiE7V1tbOmzcvhDBjxoza2tqqqqrsqz3wwAM333xzCOHLX/7yc889l21/8MEHb7rpphDCnDlzHn744alTp2ZP/eY3v7nxxhu3b98eQnjkkUeuu+66o/3fBgDgM7IGBwD0t4ceeihKN2bPnv3cc89l040QwqhRo2pra0844YTeV23btu3hhx8OIQwZMmTRokXZdCOEkEgkbrnllgULFoQQ9u/ff//992dPLV26NDr49re/3TPdCCHcdNNNI0aMCCG899572S88UqnU97///RDCsGHDFi1a1DPdCCFceOGFjz76aDRw4+///u+P4L8BAMBRJuAAgP722GOPRQff+973eq9kUVZW9q1vfav3VU899VQqlQoh/Omf/umJJ57Yu8Odd96ZTCZDCI8//ni2cciQIdFBY2PjQf0TicS2bdv2798fzXmJvPbaa5s2bQoh3H777aNHj+79W+bOnXvxxReHENatW/fJJ58c/k4BAPqNgAMA+lVXV1c0qmLEiBGXX355n33++I//uHfjm2++GR1ce+21fV41bty4L37xiyGErVu3ZrdiOeOMM6KDv/u7v/vhD3/Y0tLS85KioqLi4uLi4uLsahqvvvpqdBBNbOnTmWeeGR2sXLnyUH0AAPqZgAMA+lVjY+OBAwdCCJMnTz7UIp2jR48uKCg4qDG7C+zEiRMP9eLjx4+PDjZv3hwdnH322TfccEMIoaOj4y/+4i9GjBgxd+7cv/mbv3n22Wf37dvX+xU2bNgQHcybNy9xCP/4j/8Y9dmzZ8+nuWUAgH4g4ACAftXa2hodZMOI3pLJ5NixY/u8sLCwsM8VOiLjxo2LDpqbm7ONP/nJT+67777KysoQQiqVeu211/75n//5D/7gD6qrq6+++urskI1IU1PTp78XAQcAMHDYwR4A+lVJSUl0cPh0oPfwiqKiohBCZ2dnR0dHdmWNg7S1tUUHhYWF2cb8/Pw77rjjlltuWbJkyTPPPPPb3/422lO2o6Nj0aJFixYt+u53v/sP//AP2c7RQW1tbZ8rffT0OzsAAPQbAQcA9Kvhw4dHBxs3bjxUn/b29miblT4v3LJly0Gbm2RF64OGEA7aMCWEUFRUdMkll1xyySUhhKampiVLlvzP//zPwoULQwjf//73L7roovPOO6/nbykvL582bdrvc2cAALlkigoA9KvS0tKampoQQl1d3a5du/rss2zZst6NM2fOjA5WrFjR51XpdPr9998PIeTn50+fPj1q3L17d2Nj4+7du3v2rKqquvrqqx9//PF77703alm8eHF0cNpppx2mhshLL73005/+9KGHHkqn04fqAwDQzwQcANDfLrzwwhBCV1fXv/zLv/TZoc/27LYmP/zhDzOZTO8OTz75ZDSC46yzzsrOYbn00kurq6tPOOGEPpcUzW7jsnXr1p61hRDuv//+Pn9LY2PjlVde+Y1vfOPBBx/My/MgAQAMFJ5LAKC/ffOb34wO/uM//qO2tvags0888cQzzzzT+6pLL700Wnn03XfffeSRRw46u3379u9+97vR8a233pptj7aJTafT0WyUg7z00kvRQXZnlunTp0dzVVasWJFdmCMrnU4vWLBg//79IYTrrrvud9wnAEA/St599925rgEABpeRI0du2rRp5cqV3d3dP//5z/Pz84cOHVpVVbVmzZp///d/v+OOO0IIQ4cOPXDgwIgRIxYsWBBdlZeXN27cuMcffzyE8Mwzz3R2dlZVVY0YMWLXrl2/+tWv5s+fH20Ne84559xzzz3ZsRXt7e1PPPFECOH5559vb28fP358RUVFCGHLli333Xff3/7t36bT6WQy+aMf/Si7OcvMmTN/8pOfpNPp2traDRs2TJkypbq6uru7e8WKFbfccstTTz0V9bnvvvt6LmUKAJBbiT5HnwIAx9SePXsuvfTSt956K9uSSPzf/5S/8pWvTJ8+/Z577pk6deq6det6Xnj33Xd/73vfy/5YWFjY2dmZ/XHatGkvvfTSmDFjsi2pVOrLX/5ydqRGCCE/Pz+RSHR1dWVb/vVf//Vb3/pWz9/yyCOP/Mmf/El3d3f2t6TT6eyP1dXV7777bnZLWgCAgcAUFQDIgYqKipdeeunOO+/MDoKI0o38/Pw777zzySefTCaTfV549913/+IXv5g0aVL0YzbdKCgouO222954442e6UYIIZlMLlq06Nvf/nZ2VY7u7u5sunHRRRe9/PLLB6UbIYTrr7/+lVde+cIXvpD9LVG6kZ+ff9ttt61atUq6AQAMNEZwAEAu7dmz59e//nV9fX1nZ+eYMWMuueSS6urq33lVJpNZvnz5e++9t2vXrtLS0vHjx8+bNy+ae3KYX/T+++9v2bJl69atFRUV48ePr6mpyQYlh/LRRx+9/vrrO3bsqKioqKmpmTFjRnYmCwDAgCLgAAAAAGLPFBUAAAAg9gQcAAAAQOwJOAAAAIDYE3AAAAAAsSfgAAAAAGJPwAEAAADEnoADAAAAiD0BBwAAABB7Ag4AAAAg9gQcAAAAQOwJOAAAAIDYE3AAAAAAsSfgAAAAAGJPwAEAAADEnoADAAAAiD0BBwAAABB7Ag4AAAAg9gQcAAAAQOwJOAAAAIDYE3AAAAAAsSfgAAAAAGJPwAEAAADEnoADAAAAiD0BBwAAABB7Ag4AAAAg9gQcAAAAQOwJOAAAAIDY+//gct9x0zsoPwAAAABJRU5ErkJggg==" title="" alt="" width="720" /></p>
-
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-1">
-
-<p>Our task is to conduct a <code>t.test()</code> for each dose level to see if there is any effect on tooth length.</p>
-
-<p>Let&#39;s try it for the low dosage level</p>
-
-<pre class = 'prettyprint lang-r'>t.test(len ~ supp, data = tg, subset = dose == &quot;Low&quot;)</pre>
+<pre class = 'prettyprint lang-r'>library(dplyr)
+table(snps[,1:2]) %&gt;% fisher.test()</pre>
 
 <pre >## 
-##  Welch Two Sample t-test
+##  Fisher&#39;s Exact Test for Count Data
 ## 
-## data:  len by supp
-## t = 3.1697, df = 14.969, p-value = 0.006359
-## alternative hypothesis: true difference in means is not equal to 0
-## 95 percent confidence interval:
-##  1.719057 8.780943
-## sample estimates:
-## mean in group OJ mean in group VC 
-##            13.23             7.98</pre>
+## data:  .
+## p-value = 0.02552
+## alternative hypothesis: two.sided</pre>
 
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-2">
-
-<ul>
-<li><p>Doing this for all 3 levels will look messy!</p></li>
-<li><p>Let&#39;s change the structure of the output to make it look nicer</p></li>
-<li><p>First, how does R really save the results from the <code>t.test()</code> function?</p></li>
-</ul>
-
-<pre class = 'prettyprint lang-r'>results &lt;- t.test(len ~ supp, data = tg, subset = dose == &quot;Low&quot;)
-str(results)</pre>
-
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-3">
-
-<p>This is an <em>R</em> object type called a <code>list</code></p>
-
-<p><em>What are we really interested in?</em></p>
-
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-4">
-
-<p>This is an <em>R</em> object type called a <code>list</code></p>
-
-<p><em>What are we really interested in?</em></p>
+</article></slide><slide class=''><hgroup><h2>SNP Data</h2></hgroup><article  id="snp-data-4">
 
 <ol>
-<li><p>The difference in means?</p></li>
-<li><p>The <em>T</em>-statistic</p></li>
-<li><p>The degrees of freedom</p></li>
-<li><p>The <em>p</em>-value</p></li>
+<li>Our output needs to have:
+
+<ul>
+<li>The SNP identifier</li>
+<li>The <code>A</code> allele frequency in both populations</li>
+<li>The <em>p</em>-value from <code>fisher.test()</code></li>
+</ul></li>
 </ol>
 
-<p><strong>Where are these values in the function output?</strong></p>
+<p>The output should be a <code>data_frame</code> for each SNP</p>
 
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-5">
-
-<p>We could write a function to output these as a <code>data.frame</code></p>
-
-<pre class = 'prettyprint lang-r'>myToothTest &lt;- function(data){
-  
-  # Perform the t.test
-  res &lt;- t.test(len~supp, data)
-  
-  # Output the data.frame
-  data.frame(Difference  = -diff(res$estimate),
-             T = res$statistic,
-             DF = res$parameter,
-             P = res$p.value, 
-             row.names= NULL)
-  
-}</pre>
-
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-6">
-
-<ul>
-<li><p>Now we can run the function</p></li>
-<li><p>Note that we&#39;re going to do the sub-setting first</p></li>
-</ul>
-
-<pre class = 'prettyprint lang-r'>subTg &lt;- subset(tg, dose == &quot;Low&quot;)
-myToothTest(subTg)</pre>
-
-<pre >##   Difference        T       DF           P
-## 1       5.25 3.169733 14.96875 0.006358607</pre>
-
-<ul>
-<li>This looks much nicer!</li>
-</ul>
-
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-7">
-
-<ul>
-<li><p>Let&#39;s incorporate the sub-setting into the function</p></li>
-<li><p>AND add the dose level to the output</p></li>
-</ul>
-
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-8">
-
-<pre class = 'prettyprint lang-r'>myToothTest &lt;- function(doseLevel, data){
-  
-  stopifnot(doseLevel %in% levels(data$dose))
-  data &lt;- subset(data, dose == doseLevel)
-  
-  # Perform the t.test
-  res &lt;- t.test(len~supp, data)
-  
-  # Output the data.frame
-  data.frame(Dose = doseLevel,
-             Difference  = -diff(res$estimate),
-             T = res$statistic,
-             DF = res$parameter,
-             P = res$p.value, 
-             row.names= NULL)
-  
-}</pre>
-
-</article></slide><slide class=''><hgroup><h2>Tooth Growth</h2></hgroup><article  id="tooth-growth-9">
-
-<p>Now the function is even easier to run</p>
-
-<pre class = 'prettyprint lang-r'>myToothTest(&quot;Low&quot;, tg)</pre>
-
-<pre >##   Dose Difference        T       DF           P
-## 1  Low       5.25 3.169733 14.96875 0.006358607</pre>
-
-</article></slide><slide class=''><hgroup><h2>Now the FUN starts</h2></hgroup><article  id="now-the-fun-starts">
-
-<p><em>R</em> has a function called <code>lapply()</code></p>
-
-<p>This will apply a function to each element of a vector</p>
-
-<pre class = 'prettyprint lang-r'>?lapply</pre>
-
-<p>Just to see this in action:</p>
-
-<pre class = 'prettyprint lang-r'>y &lt;- c(1, 16, 2, 9)
-lapply(y, FUN = sqrt)</pre>
-
-<p><strong>This places each element in the FIRST argument position of the function</strong></p>
-
-</article></slide><slide class=''><hgroup><h2>Now the FUN starts</h2></hgroup><article  id="now-the-fun-starts-1">
-
-<p>There is a alternate function <code>sapply()</code> that simplifies the output where possible</p>
-
-<pre class = 'prettyprint lang-r'>sapply(y, FUN = sqrt)</pre>
-
-<pre >## [1] 1.000000 4.000000 1.414214 3.000000</pre>
-
-<p>It&#39;s very useful, but slightly unpredictable&#8230;</p>
-
-</article></slide><slide class=''><hgroup><h2>Now the FUN starts</h2></hgroup><article  id="now-the-fun-starts-2">
-
-<p><em>Can we use this idea for our different dose levels?</em></p>
-
-</article></slide><slide class=''><hgroup><h2>Now the FUN starts</h2></hgroup><article  id="now-the-fun-starts-3">
-
-<p><em>Can we use this idea for our different dose levels?</em></p>
-
-<p>YES!!!</p>
-
-<p>This is why I placed <code>doseLevels</code> as the first argument of our function</p>
-
-<pre class = 'prettyprint lang-r'>doseLevels &lt;- levels(tg$dose)
-lapply(doseLevels, myToothTest, data = tg)</pre>
-
-<p>Note that we specified <code>data = tg</code> after the function call</p>
-
-</article></slide><slide class=''><hgroup><h2>Getting amazing looking output</h2></hgroup><article  id="getting-amazing-looking-output">
-
-<p>The <em>R</em> package <code>dplyr</code> has a function <code>bind_rows()</code> for joining identical <code>data.frame</code> objects.</p>
-
-<p>First install and/or load the package</p>
-
-<pre class = 'prettyprint lang-r'>install.packages(dplyr)
-library(dplyr)</pre>
-
-</article></slide><slide class=''><hgroup><h2>Getting amazing looking output</h2></hgroup><article  id="getting-amazing-looking-output-1">
-
-<pre class = 'prettyprint lang-r'>doseResults &lt;- lapply(doseLevels, myToothTest, data = tg)
-doseResults &lt;- bind_rows(doseResults)
-doseResults</pre>
-
-<pre >## Source: local data frame [3 x 5]
+<pre >## Source: local data frame [1 x 4]
 ## 
-##    Dose Difference          T       DF           P
-##   (chr)      (dbl)      (dbl)    (dbl)       (dbl)
-## 1   Low       5.25  3.1697328 14.96875 0.006358607
-## 2   Med       5.93  4.0327696 15.35767 0.001038376
-## 3  High      -0.08 -0.0461361 14.03982 0.963851589</pre>
+##     SNP   Control     Treat    p.value
+##   (chr)     (dbl)     (dbl)      (dbl)
+## 1  SNP1 0.5283019 0.3645833 0.02551551</pre>
 
-</article></slide><slide class=''><hgroup><h2>Getting amazing looking output</h2></hgroup><article  id="getting-amazing-looking-output-2">
+</article></slide><slide class=''><hgroup><h2>How could we do this as a function?</h2></hgroup><article  id="how-could-we-do-this-as-a-function">
 
-<p>And for those using R Markdown/knitr</p>
+</article></slide><slide class=''><hgroup><h2>Here&#39;s my function</h2></hgroup><article  id="heres-my-function">
+
+<pre class = 'prettyprint lang-r'>runFisher &lt;- function(SNP, data){
+  alleleTable &lt;- table(data[c(&quot;Population&quot;, SNP)])
+  freqs &lt;- apply(alleleTable, MARGIN = 1,
+                 function(x) (x[1] + 0.5*x[2]) / sum(x))
+  data_frame(SNP = SNP,
+             Control = freqs[&quot;Control&quot;],
+             Treat = freqs[&quot;Treat&quot;],
+             p.value = fisher.test(alleleTable)$p.value)
+}
+runFisher(&quot;SNP1&quot;, snps)</pre>
+
+<pre >## Source: local data frame [1 x 4]
+## 
+##     SNP   Control     Treat    p.value
+##   (chr)     (dbl)     (dbl)      (dbl)
+## 1  SNP1 0.5283019 0.3645833 0.02551551</pre>
+
+</article></slide><slide class=''><hgroup><h2>Running the function</h2></hgroup><article  id="running-the-function">
+
+<p>We can now run the function, remembering to exclude the Population column from the list of SNPs</p>
+
+<pre class = 'prettyprint lang-r'>allSnps &lt;- colnames(snps)[-1]
+snpResults &lt;- lapply(allSnps, 
+                     runFisher, 
+                     data = snps) </pre>
+
+<p>Now we have a list of data frames as our results</p>
+
+</article></slide><slide class=''><hgroup><h2>Running the function</h2></hgroup><article  id="running-the-function-1">
+
+<p>We could throw in the <code>magrittr</code> &amp; some <code>dplyr</code> sugar</p>
+
+<pre class = 'prettyprint lang-r'>snpResults &lt;- allSnps %&gt;%
+  lapply(runFisher, data = snps) %&gt;%
+  bind_rows() %&gt;%
+  mutate(adjP = p.adjust(p.value, 
+                        method=&quot;bonferroni&quot;)) %&gt;%
+  arrange(p.value)</pre>
+
+</article></slide><slide class=''><hgroup><h2>And the results</h2></hgroup><article  id="and-the-results">
 
 <pre class = 'prettyprint lang-r'>library(knitr)
-kable(doseResults)</pre>
+format(snpResults[1:5,], digits=3) %&gt;%
+  kable</pre>
 
 <table class = 'rmdtable'>
 <tr class="header">
-<th align="left">Dose</th>
-<th align="right">Difference</th>
-<th align="right">T</th>
-<th align="right">DF</th>
-<th align="right">P</th>
+<th align="left">SNP</th>
+<th align="left">Control</th>
+<th align="left">Treat</th>
+<th align="left">p.value</th>
+<th align="left">adjP</th>
 </tr>
 <tr class="odd">
-<td align="left">Low</td>
-<td align="right">5.25</td>
-<td align="right">3.1697328</td>
-<td align="right">14.96875</td>
-<td align="right">0.0063586</td>
+<td align="left">SNP1716</td>
+<td align="left">0.613</td>
+<td align="left">0.090</td>
+<td align="left">2.33e-14</td>
+<td align="left">4.66e-11</td>
 </tr>
 <tr class="even">
-<td align="left">Med</td>
-<td align="right">5.93</td>
-<td align="right">4.0327696</td>
-<td align="right">15.35767</td>
-<td align="right">0.0010384</td>
+<td align="left">SNP603</td>
+<td align="left">0.385</td>
+<td align="left">0.892</td>
+<td align="left">2.54e-13</td>
+<td align="left">5.08e-10</td>
 </tr>
 <tr class="odd">
-<td align="left">High</td>
-<td align="right">-0.08</td>
-<td align="right">-0.0461361</td>
-<td align="right">14.03982</td>
-<td align="right">0.9638516</td>
+<td align="left">SNP1236</td>
+<td align="left">0.632</td>
+<td align="left">0.108</td>
+<td align="left">2.97e-13</td>
+<td align="left">5.94e-10</td>
+</tr>
+<tr class="even">
+<td align="left">SNP1271</td>
+<td align="left">0.423</td>
+<td align="left">0.918</td>
+<td align="left">2.84e-12</td>
+<td align="left">5.69e-09</td>
+</tr>
+<tr class="odd">
+<td align="left">SNP248</td>
+<td align="left">0.585</td>
+<td align="left">0.100</td>
+<td align="left">7.23e-12</td>
+<td align="left">1.45e-08</td>
 </tr>
 </table>
 
-</article></slide><slide class=''><hgroup><h2>In the real world</h2></hgroup><article  id="in-the-real-world">
+</article></slide><slide class=''><hgroup><h2>Getting serious</h2></hgroup><article  id="getting-serious">
 
-<p>This technique can be applied to numerous datasets</p>
+<p>This was a small dataset of 2000 SNPs</p>
+
+<p>We also only ran one type of test</p>
+
+<p><em>What if we had 500,000 SNPs?</em></p>
+
+<p>The speed of a function can become important.</p>
+
+</article></slide><slide class=''><hgroup><h2>Getting serious</h2></hgroup><article  id="getting-serious-1">
+
+<p>Try this to see how fast the function was</p>
+
+<pre class = 'prettyprint lang-r'>system.time(lapply(allSnps, runFisher, data=snps))</pre>
+
+<pre >##    user  system elapsed 
+##   1.524   0.000   1.524</pre>
+
+<p>The final value is the total time taken by the process (in seconds)</p>
+
+</article></slide><slide class=''><hgroup><h2>Getting serious</h2></hgroup><article  id="getting-serious-2">
+
+<p>We can use the parallel version of <code>lapply()</code>: <code>mclapply()</code></p>
+
+<pre class = 'prettyprint lang-r'>library(parallel)
+system.time(mclapply(allSnps, 
+                     runFisher, 
+                     data = snps,
+                     mc.cores = 3))</pre>
+
+<pre >##    user  system elapsed 
+##   1.353   0.032   0.805</pre>
+
+</article></slide><slide class=''><hgroup><h2>Getting Serious</h2></hgroup><article  id="getting-serious-3">
 
 <ul>
-<li><p>You might want to run the same linear regression model on data from different climates/regions</p></li>
-<li><p>You might have thousands of SNPs to run a <code>fisher.test()</code> on</p></li>
+<li><p>Using 3 cores on my laptop cut the time in half!</p></li>
+<li><p>Some time was sacrificed setting up the threads</p></li>
+<li>A recent project using parallel took a LD analysis from &gt; 2 weeks to 2 days
+
+<ul>
+<li>We used 20 cores</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2><code>parallel</code></h2></hgroup><article  id="parallel">
+
+<p>An alternative which gives you more control is to use the package <code>parallel</code></p>
+
+<ul>
+<li>Based on the package <code>snow</code></li>
+</ul>
+
+<p>The idea is:</p>
+
+<ol>
+<li>Set up a cluster (can be on your PC)</li>
+<li>Load any required packages on each node</li>
+<li>Run the process</li>
+</ol>
+
+</article></slide><slide class=''><hgroup><h2><code>parallel</code></h2></hgroup><article  id="parallel-1">
+
+<p>Here&#39;s the above analysis run using <code>parallel</code></p>
+
+<pre class = 'prettyprint lang-r'>library(parallel)
+nNodes &lt;- 3
+cl &lt;- makePSOCKcluster(rep(&quot;localhost&quot;, nNodes))
+clusterEvalQ(cl, library(dplyr))
+snpResults &lt;- parLapply(cl, #NB: `cl` goes first!
+                        allSnps,
+                        runFisher,
+                        data = snps) %&gt;%
+  bind_rows() %&gt;%
+  mutate(adjP =p.adjust(p.value, 
+                        method=&quot;bonferroni&quot;)) %&gt;%
+  arrange(p.value)
+stopCluster(cl)</pre>
+
+</article></slide><slide class=''><hgroup><h2><code>snow</code></h2></hgroup><article  id="snow">
+
+<p>Was the original cross-platform package</p>
+
+<p>Even more control over each node</p>
+
+<ol>
+<li><p>Set up a cluster (can be on your PC)</p></li>
+<li><p>Load any required packages on each node</p></li>
+<li><p>Export any functions &amp; objects to each node</p></li>
+<li><p>Run the process</p></li>
+</ol>
+
+</article></slide><slide class=''><hgroup><h2><code>snow</code></h2></hgroup><article  id="snow-1">
+
+<pre class = 'prettyprint lang-r'>library(snow)
+nNodes &lt;- 3
+cl &lt;- makeSOCKcluster(rep(&quot;localhost&quot;, nNodes))
+splitSnps &lt;- clusterSplit(cl, allSnps)
+for (i in 1:nNodes) {
+  clusterExport(cl[i], c(&quot;i&quot;, &quot;splitSnps&quot;))
+  clusterEvalQ(cl[i], splitSnps &lt;- splitSnps[[i]])
+  }
+clusterEvalQ(cl, splitSnps[1:3])</pre>
+
+<pre >## [[1]]
+## [1] &quot;SNP1&quot; &quot;SNP2&quot; &quot;SNP3&quot;
+## 
+## [[2]]
+## [1] &quot;SNP667&quot; &quot;SNP668&quot; &quot;SNP669&quot;
+## 
+## [[3]]
+## [1] &quot;SNP1335&quot; &quot;SNP1336&quot; &quot;SNP1337&quot;</pre>
+
+<pre class = 'prettyprint lang-r'>stopCluster(cl)</pre>
+
+</article></slide><slide class=''><hgroup><h2><code>snow</code></h2></hgroup><article  id="snow-2">
+
+<ul>
+<li><p>There is always overhead setting up the cluster</p></li>
+<li>The cluster <strong>always</strong> needs to be stopped when you&#39;re done with it!
+
+<ul>
+<li>Occasionally won&#39;t shut down correctly</li>
+</ul></li>
+<li><p><code>clusterApply()</code> is equivalent to <code>parLapply()</code></p></li>
+<li><p>There is also a <em>load balancing</em> version,<code>clusterApplyLB()</code></p></li>
 </ul></article></slide>
 
 
